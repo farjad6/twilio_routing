@@ -21,7 +21,7 @@ router.get('/', async function (req, res) {
     // helpers.processManagerMessage(messageBody)
     // helpers.sendAllUnrespondedMessagesToAccountant()
     // console.log(result, bankNumbers);
-    res.send('Hello World!');
+    res.send('This service is running correctly!');
 });
 
 router.get('/recieve-msg', function (req, res) {

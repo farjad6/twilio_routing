@@ -7,6 +7,7 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: 5432,
+  ssl: true
 })
 
 const scheduleTask = () => {
@@ -114,7 +115,7 @@ const processBankMessage = async (message) => {
       var insertCharge = ` insert into charges (last4, message, created_at) values ('${matchLast4}', '${message}', '${timestamp}') RETURNING id;`;
       const { rows }  = await pool.query(insertCharge)
       let chargeID = rows[0].id
-      const messageToSend = `Bank's Message: ${message}. ` ;
+      var messageToSend = `Bank's Message: ${message}. ` ;
       if( targetedManager ){
         messageToSend += `\n plese reply with C${chargeID}Y if you recognize this if not please reply with C${chargeID}N`
         sendToManager(targetedManager, messageToSend)
