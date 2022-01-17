@@ -10,15 +10,15 @@ const pool = new Pool({
   ssl: true
 })
 
-const scheduleTask = () => {
-  var task = cron.schedule('0 0 * * *', () => {
-    sendAllUnrespondedMessagesToAccountant();
-  }, {
-    scheduled: true,
-    timezone: "EST"
-  });
-  task.start();
-}
+// const scheduleTask = () => {
+//   var task = cron.schedule('0 0 * * *', () => {
+//     sendAllUnrespondedMessagesToAccountant();
+//   }, {
+//     scheduled: true,
+//     timezone: "EST"
+//   });
+//   task.start();
+// }
 
 const sendAllUnrespondedMessagesToAccountant = async() => {
   try{
@@ -89,6 +89,13 @@ const sendToManager = async (manager, message) => {
   sendMessage(manager[0].phone, message)
 } 
 
+const sendToTechnicalStaff = async (message) => {
+  var technicalNumbers = process.env.TECHNICAL_DEPT_PHONE.split(',');
+  technicalNumbers.forEach(function (item, index) {
+    sendMessage(item, message)
+  })
+}
+
 const sendToThirdParty = async (message) => {
   if(process.env.TWILIO_THIRD_PARTY_PHONE){
     sendMessage(process.env.TWILIO_THIRD_PARTY_PHONE, message)
@@ -100,9 +107,11 @@ const sendToAccoutant = async (chargeId) => {
   let charge = await getCharge(chargeId)
   var manager = await getManagerFromLast4(charge[0].last4)
   var accountantNumbers = process.env.ACCOUNTS_DEPT_PHONE.split(',');
-  accountantNumbers.forEach(function (item, index) {
-    sendMessage(item, `${manager[0].name} does not recognize this charge, Bank's Message: ${charge[0].message}`)
-  })
+  if(manager.length){
+    accountantNumbers.forEach(function (item, index) {
+      sendMessage(item, `${manager[0].name} does not recognize this charge, Bank's Message: ${charge[0].message}`)
+    })
+  }
 }
 
 const processBankMessage = async (message) => {
@@ -122,7 +131,7 @@ const processBankMessage = async (message) => {
         sendToManager(targetedManager, messageToSend)
       }else{
         messageToSend += `\n manager with these last 4 card number does not exsist in the database`
-        sendToThirdParty(messageToSend)
+        sendToTechnicalStaff(messageToSend)
         // targeted manager with last 4 does not exsits
       }
     }else{

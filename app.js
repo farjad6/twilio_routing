@@ -24,6 +24,10 @@ router.get('/', async function (req, res) {
     res.send('This service is running correctly! Version 1.01b');
 });
 
+router.get('/scheduler', async function (req, res) {
+    helpers.sendAllUnrespondedMessagesToAccountant()
+});
+
 router.get('/recieve-msg', function (req, res) {
     // const twilioSignature = req.headers['x-twilio-signature'];
     // const params = req.body;
