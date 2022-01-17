@@ -98,9 +98,10 @@ const sendToThirdParty = async (message) => {
 
 const sendToAccoutant = async (chargeId) => {
   let charge = await getCharge(chargeId)
+  var manager = await getManagerFromLast4(charge[0].last4)
   var accountantNumbers = process.env.ACCOUNTS_DEPT_PHONE.split(',');
   accountantNumbers.forEach(function (item, index) {
-    sendMessage(item, `Manager does not recognize this charge, Bank's Message: ${charge[0].message}`)
+    sendMessage(item, `${manager[0].name} does not recognize this charge, Bank's Message: ${charge[0].message}`)
   })
 }
 
@@ -117,7 +118,7 @@ const processBankMessage = async (message) => {
       let chargeID = rows[0].id
       var messageToSend = `Bank's Message: ${message}. ` ;
       if( targetedManager ){
-        messageToSend += `\n plese reply to (610) 947-5931 with C${chargeID}Y if you recognize this if not please reply with C${chargeID}N`
+        messageToSend += `\nPlease reply with C${chargeID}Y if you recognize this, if not please reply with C${chargeID}N`
         sendToManager(targetedManager, messageToSend)
       }else{
         messageToSend += `\n manager with these last 4 card number does not exsist in the database`
