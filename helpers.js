@@ -147,8 +147,8 @@ const processBankMessage = async (message) => {
 
 const processManagerMessage = async (message) => {
   try{
-    var yesRegex= /C(.*?)Y/;
-    var noRegex= /C(.*?)N/;
+    var yesRegex= /C([0-9]*\d)Y/i;
+    var noRegex= /C([0-9]*\d)N/i;
     var yesResult = yesRegex.exec(message);
     var noResult = noRegex.exec(message);
     if( yesResult || noResult ){
