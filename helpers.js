@@ -112,12 +112,12 @@ const processBankMessage = async (message) => {
     if(matchLast4 ){
       matchLast4 = matchLast4[0].substring(1, matchLast4[0].length-1);
       var targetedManager = await getManagerFromLast4(matchLast4)
-      var insertCharge = ` insert into charges (last4, message, created_at) values ('${matchLast4}', '${message}', '${timestamp}') RETURNING id;`;
+      var insertCharge = ` insert into charges (last4, message, created_at) values ('${matchLast4}', '${message.replace("'", "″")}', '${timestamp}') RETURNING id;`;
       const { rows }  = await pool.query(insertCharge)
       let chargeID = rows[0].id
       var messageToSend = `Bank's Message: ${message}. ` ;
       if( targetedManager ){
-        messageToSend += `\n plese reply with C${chargeID}Y if you recognize this if not please reply with C${chargeID}N`
+        messageToSend += `\n plese reply to (610) 947-5931 with C${chargeID}Y if you recognize this if not please reply with C${chargeID}N`
         sendToManager(targetedManager, messageToSend)
       }else{
         messageToSend += `\n manager with these last 4 card number does not exsist in the database`
