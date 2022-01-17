@@ -7,7 +7,7 @@ var express = require('express');
 const path = require('path');
 const helpers = require('./helpers')
 var router = express();
-helpers.scheduleTask();
+// helpers.scheduleTask();
 
 router.get('/', async function (req, res) {
     // result = await helpers.getAllManagers();
@@ -26,6 +26,7 @@ router.get('/', async function (req, res) {
 
 router.get('/scheduler', async function (req, res) {
     helpers.sendAllUnrespondedMessagesToAccountant()
+    res.send('Scheduler Started Sucessfully!');
 });
 
 router.get('/recieve-msg', function (req, res) {

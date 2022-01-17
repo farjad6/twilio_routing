@@ -189,6 +189,5 @@ module.exports = {
     processManagerMessage,
     processUnknownMessage,
     getManagerFromLast4,
-    sendAllUnrespondedMessagesToAccountant,
-    scheduleTask
+    sendAllUnrespondedMessagesToAccountant
 }
