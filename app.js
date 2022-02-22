@@ -21,7 +21,7 @@ router.get('/', async function (req, res) {
     // helpers.processManagerMessage(messageBody)
     // helpers.sendAllUnrespondedMessagesToAccountant()
     // console.log(result, bankNumbers);
-    res.send('This service is running correctly! Version 1.02A');
+    res.send('This service is running correctly! Version 1.09 Updated 2022-02-17');
 });
 
 router.get('/scheduler', async function (req, res) {
@@ -46,6 +46,14 @@ router.get('/recieve-msg', function (req, res) {
     // }
     // console.log("req",req);
 
+    processMessages(req);
+
+    return res.status(200).send('success');
+    
+});
+
+async function processMessages(req){
+
     var messageFrom = req.query.From;
     var messageBody = req.query.Body;
 
@@ -62,12 +70,8 @@ router.get('/recieve-msg', function (req, res) {
         // if a message does 
         helpers.processUnknownMessage(messageBody);
     }
-    return res.status(200).send('success');
 
-
-
-    
-});
+}
 
 
 router.listen(process.env.PORT, function () {

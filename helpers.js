@@ -22,10 +22,10 @@ const pool = new Pool({
 
 const sendAllUnrespondedMessagesToAccountant = async() => {
   try{
-    const { rows }  = await pool.query (`SELECT * FROM charges WHERE created_at > (CURRENT_DATE - INTERVAL '1 days') and status = 0`)
+    const { rows }  = await pool.query (`SELECT * FROM charges WHERE created_at <= (CURRENT_DATE - INTERVAL '1 days') and status = 0 and sent = 0`)
     if( rows.length ){
       rows.forEach(function (item, index) {
-        sendToAccoutant(item.id);
+        sendToNoResponse(item.id);
       })
     }
   }catch(e){
@@ -104,12 +104,26 @@ const sendToThirdParty = async (message) => {
 } 
 
 const sendToAccoutant = async (chargeId) => {
-  let charge = await getCharge(chargeId)
-  var manager = await getManagerFromLast4(charge[0].last4)
+  let charge = await getCharge(chargeId);
+  var manager = await getManagerFromLast4(charge[0].last4);
   var accountantNumbers = process.env.ACCOUNTS_DEPT_PHONE.split(',');
   if(manager.length){
     accountantNumbers.forEach(function (item, index) {
-      sendMessage(item, `${manager[0].name} does not recognize this charge, Bank's Message: ${charge[0].message}`)
+      sendMessage(item, `${manager[0].name} ( ${manager[0].phone} ) does not recognize this charge, Bank's Message: ${charge[0].message}`);
+    })
+  }
+}
+
+const sendToNoResponse = async (chargeId) => {
+  let charge = await getCharge(chargeId);
+  var manager = await getManagerFromLast4(charge[0].last4);
+  var noResponseNumber = process.env.NOT_RESPONSE.split(',');
+  if(manager.length){
+    var updateCharge = ` update charges set sent = 1 where charge_id = ${chargeId}`;
+    const { rows }  = await pool.query(updateCharge);
+    console.log("Rows update: " + rows.length);
+    noResponseNumber.forEach(function (item, index) {
+      sendMessage(item, `${manager[0].name} ( ${manager[0].phone} ) did not respond to this charge, Bank's Message: ${charge[0].message}`);
     })
   }
 }
@@ -127,15 +141,19 @@ const processBankMessage = async (message) => {
       let chargeID = rows[0].id
       var messageToSend = `Bank's Message: ${message}. ` ;
       if( targetedManager ){
-        messageToSend += `\nPlease reply with C${chargeID}Y if you recognize this, if not please reply with C${chargeID}N`
+        messageToSend += `\nPlease reply with C${chargeID}Y and Stock# OR description if you recognize this, if not please reply with C${chargeID}N`
         sendToManager(targetedManager, messageToSend)
       }else{
-        messageToSend += `\n manager with these last 4 card number does not exsist in the database`
+        messageToSend += `\n manager with these last 4 card number does not exist in the database`
         sendToTechnicalStaff(messageToSend)
+        var insertMessage = ` insert into odd_message(last4,message,created_at) values ('${matchLast4}', '${message.replace("'", "″")}','${timestamp}');`;
+        await pool.query(insertMessage)        
         // targeted manager with last 4 does not exsits
       }
     }else{
       sendToThirdParty(message)
+      var insertMessageNoMatch = ` insert into odd_message(message,created_at) values ('${message.replace("'", "″")}','${timestamp}');`;
+      await pool.query(insertMessageNoMatch)      
       // this is not a message with the charges
     }
 
