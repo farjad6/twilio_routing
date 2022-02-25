@@ -130,12 +130,12 @@ const sendToNoResponse = async (chargeId) => {
     var manager = await getManagerFromLast4(charge[0].last4);
     var noResponseNumber = process.env.NOT_RESPONSE.split(',');
     if (manager.length) {
-      var updateCharge = ` update charges set sent = 1 where charge_id = ${chargeId}`;
-      console.log("Rows update: " + rows.length);
+      var updateCharge = ` update charges set sent = 1 where charge_id = ${chargeId}`;      
       noResponseNumber.forEach(function (item, index) {
         sendMessage(item, `${manager[0].name} ( ${manager[0].phone} ) did not respond to this charge, Bank's Message: ${charge[0].message}`);
       })
-      await pool.query(updateCharge);
+      const rows = await pool.query(updateCharge);
+      console.log("Rows update: " + rows.length);
     }
   } catch (e) {
     console.log("sendToNoResponse ", e);
