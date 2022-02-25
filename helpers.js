@@ -130,7 +130,7 @@ const sendToNoResponse = async (chargeId) => {
     var manager = await getManagerFromLast4(charge[0].last4);
     var noResponseNumber = process.env.NOT_RESPONSE.split(',');
     if (manager.length) {
-      var updateCharge = ` update charges set sent = 1 where charge_id = ${chargeId}`;      
+      var updateCharge = ` update charges set sent = 1 where id = ${chargeId}`;      
       noResponseNumber.forEach(function (item, index) {
         sendMessage(item, `${manager[0].name} ( ${manager[0].phone} ) did not respond to this charge, Bank's Message: ${charge[0].message}`);
       })
