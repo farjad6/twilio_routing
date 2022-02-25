@@ -21,7 +21,7 @@ router.get('/', async function (req, res) {
     // helpers.processManagerMessage(messageBody)
     // helpers.sendAllUnrespondedMessagesToAccountant()
     // console.log(result, bankNumbers);
-    res.send('This service is running correctly! Version 1.09 Updated 2022-02-17');
+    res.send('This service is running correctly! Version 1.10 Updated 2022-02-25');
 });
 
 router.get('/scheduler', async function (req, res) {
