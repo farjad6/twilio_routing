@@ -7,26 +7,38 @@ var express = require('express');
 const path = require('path');
 const helpers = require('./helpers')
 var router = express();
-// helpers.scheduleTask();
+const MessagingResponse = require('twilio').twiml.MessagingResponse;
+// add relevant request parsers
+router.use(express.json());
+router.use(express.urlencoded({ extended: true }));
+router.use(express.text());
 
-router.get('/', async function (req, res) {
-    // result = await helpers.getAllManagers();
-    // var bankNumbers = process.env.BANK_NUMBERS.split(',');
-    
 
-    // result = await helpers.getManagerFromPhone( "+15408274139" )
-    // messageBody = "Capital One: A charge or hold for $76.20 on January 13, 2022 was placed on your Spark Cash credit card (9877) at Home Depot. Std carrier chrges apply";
-    // helpers.processBankMessage(messageBody);
-    // messageBody = "C8N"
-    // helpers.processManagerMessage(messageBody)
-    // helpers.sendAllUnrespondedMessagesToAccountant()
-    // console.log(result, bankNumbers);
-    res.send('This service is running correctly! Version 1.12 Updated 2022-02-25');
+router.get('/version', async function (req, res) {
+    res.send('This service is running correctly! Version 2 Updated 2022-03-07');
 });
 
 router.get('/scheduler', async function (req, res) {
     helpers.sendAllUnrespondedMessagesToAccountant()
     res.send('Scheduler Started Sucessfully!');
+});
+
+router.get('/charge/:id', async function (req, res) {
+    let charge = await helpers.getCharge(req.params.id)
+    res.send(JSON.stringify({ 
+        status: charge ? true : false, 
+        data: charge,
+        message: "Success"
+    }));
+});
+
+router.post('/charge', async function (req, res) {
+    await helpers.recordManagerResponse(req.body)
+    res.send(JSON.stringify({ 
+        status: true, 
+        data: [],
+        message: "Success"
+    }));
 });
 
 router.get('/recieve-msg', function (req, res) {
@@ -47,10 +59,14 @@ router.get('/recieve-msg', function (req, res) {
     // console.log("req",req);
 
     processMessages(req);
-
-    return res.status(200).send('success');
+    // return res.status(200).send('success');
+    const twiml = new MessagingResponse();
+    res.writeHead(200, {'Content-Type': 'text/xml'});
+    res.end(twiml.toString());
     
 });
+
+
 
 async function processMessages(req){
 
@@ -73,6 +89,11 @@ async function processMessages(req){
 
 }
 
+// adding react routes
+router.use('/static', express.static(path.join(__dirname, 'frontend/build//static')));
+router.get('*', function(req, res) {
+  res.sendFile('index.html', {root: path.join(__dirname, 'frontend/build')});
+});
 
 router.listen(process.env.PORT, function () {
     console.log(`Example app listening on port ${process.env.PORT}!`);

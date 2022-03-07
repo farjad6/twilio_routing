@@ -7,7 +7,7 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: 5432,
-  ssl: true
+  // ssl: true
 })
 
 // const scheduleTask = () => {
@@ -70,6 +70,25 @@ const getManagerFromLast4 = async (last4) => {
   }
 }
 
+const recordManagerResponse = async (data) => {
+  try {
+    let status = 0;
+    if ( data.status == 2 ) {
+      status = 2;
+    } else if ( data.status == 1 ) {
+      status = 1;
+    }
+    let query = `update charges set status=${status}, comment='${data.comment.replace(/'/g, "''")}' where id = ${data.id}`;
+    await pool.query(query)
+    if( status == 1){
+      sendToAccoutant(data.id);
+    }
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
 const getCharge = async (id) => {
   try {
     const {
@@ -119,7 +138,11 @@ const sendToAccoutant = async (chargeId) => {
   var accountantNumbers = process.env.ACCOUNTS_DEPT_PHONE.split(',');
   if (manager.length) {
     accountantNumbers.forEach(function (item, index) {
-      sendMessage(item, `${manager[0].name} ( ${manager[0].phone} ) does not recognize this charge, Bank's Message: ${charge[0].message}`);
+      let messageBody = `${manager[0].name} ( ${manager[0].phone} ) does not recognize this charge,\n Bank's Message: ${charge[0].message}`;
+      if( charge[0].comment ){
+        messageBody += `, \n Managers's Comment: ${charge[0].comment}`
+      }  
+      sendMessage(item, messageBody);
     })
   }
 }
@@ -151,14 +174,14 @@ const processBankMessage = async (message) => {
     if (matchLast4) {
       matchLast4 = matchLast4[0].substring(1, matchLast4[0].length - 1);
       var targetedManager = await getManagerFromLast4(matchLast4)
-      var insertCharge = ` insert into charges (last4, message, created_at) values ('${matchLast4}', '${message.replace("'", "″")}', '${timestamp}') RETURNING id;`;
+      var insertCharge = ` insert into charges (last4, message, created_at) values ('${matchLast4}', '${message.replace(/'/g, "''")}', '${timestamp}') RETURNING id;`;
       const {
         rows
       } = await pool.query(insertCharge)
       let chargeID = rows[0].id
       var messageToSend = `Bank's Message: ${message}. `;
       if (targetedManager) {
-        messageToSend += `\nPlease reply with C${chargeID}Y and Stock# OR description if you recognize this, if not please reply with C${chargeID}N`
+        messageToSend += `\nPlease follow the link to report this charge ${process.env.SITE_URL}/verify/${chargeID}`
         sendToManager(targetedManager, messageToSend)
       } else {
         messageToSend += `\n manager with these last 4 card number does not exist in the database`
@@ -224,5 +247,7 @@ module.exports = {
   processManagerMessage,
   processUnknownMessage,
   getManagerFromLast4,
-  sendAllUnrespondedMessagesToAccountant
+  sendAllUnrespondedMessagesToAccountant,
+  getCharge,
+  recordManagerResponse
 }
