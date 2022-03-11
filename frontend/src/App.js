@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 import Home from './Views/Home';
+import Login from './Views/Login';
 import Verify from './Views/Verify';
-
+import withAuth from './Components/WithAuth';
+import withOutAuth from './Components/withOutAuth';
 class App extends Component {
   render() {
     return (
@@ -17,7 +19,8 @@ class App extends Component {
           </nav>
           <hr /> */}
           <Switch>
-              <Route exact path='/' component={Home} />
+              <Route exact path='/' component={withAuth(Home)} />
+              <Route exact path='/login' component={withOutAuth(Login)} />
               <Route path='/verify/:id' component={Verify} />
           </Switch>
         {/* </div> */}

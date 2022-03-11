@@ -7,11 +7,16 @@ var express = require('express');
 const path = require('path');
 const helpers = require('./helpers')
 var router = express();
+const withAuth = require('./middleware');
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 // add relevant request parsers
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 router.use(express.text());
+router.use(cookieParser());
+const secret = process.env.JWT_SECRET
 
 
 router.get('/version', async function (req, res) {
@@ -22,6 +27,44 @@ router.get('/scheduler', async function (req, res) {
     helpers.sendAllUnrespondedMessagesToAccountant()
     res.send('Scheduler Started Sucessfully!');
 });
+
+// Authentication Routes
+
+router.post('/authenticate', function(req, res) {
+    const { email, password } = req.body;
+    let result = helpers.loginUser(email,password)
+    if( result ){
+        const payload = { email };
+        const token = jwt.sign(payload, secret, {
+        expiresIn: '1h'
+        });
+        res.cookie('token', token, { httpOnly: true })
+        .sendStatus(200);
+    }else{
+        res.status(401)
+            .json({
+              error: 'Incorrect email or password'
+          });
+    }
+})
+
+router.get('/checkToken', withAuth, function(req, res) {
+    res.sendStatus(200);
+});
+
+// Closed Routes
+
+router.get('/charges', withAuth, async function (req, res) {
+    let charges = await helpers.getAllCharges()
+    res.send(JSON.stringify({ 
+        data: charges,
+        message: "Success"
+    }));
+});
+
+
+
+// Open routes for twilio and form 
 
 router.get('/charge/:id', async function (req, res) {
     let charge = await helpers.getCharge(req.params.id)

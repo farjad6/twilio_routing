@@ -1,0 +1,21 @@
+#settings table{
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+	
+}
+#settings th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: center;
+    background-color: #534d64;
+    color: white;
+	padding-left:4px;
+}
+#settings td{
+    border: 1px solid #ddd;
+    padding: 4px;
+}
+#settings .submit_btn{
+    margin-left: 30%;
+}

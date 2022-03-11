@@ -16,3 +16,12 @@ export async function updateCharge(data){
     return false
   }
 }
+
+export async function getAllCharges(){
+  let charges = await apiCall("GET", `charges`)
+  if( charges.data.data ){
+    return charges.data.data
+  }else{
+    return []
+  }
+}

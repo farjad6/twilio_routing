@@ -89,6 +89,22 @@ const recordManagerResponse = async (data) => {
   }
 }
 
+const getAllCharges = async() => {
+  try {
+    const {
+      rows
+    } = await pool.query(`select c.id as id, c.message as message, c.comment as comment, c.status as status, c.created_at as created_at, c.last4 as last4, m.name as name, m.last4 as mlast4, m.email as email  from charges c LEFT JOIN managers m ON cast(c.last4 as int)=cast(m.last4 as int) order by created_at DESC`);
+    if (rows.length) {
+      return rows
+    } else {
+      return []
+    }
+  } catch (e) {
+    console.log("error", e)
+    return []
+  }
+}
+
 const getCharge = async (id) => {
   try {
     const {
@@ -240,6 +256,18 @@ const processUnknownMessage = async (message) => {
   }
 }
 
+const loginUser = (email, password) => {
+  try {
+    // Message Not from Manager or Bank
+    if( email == process.env.EMAIL && password == process.env.PASSWORD ){
+      return true
+    }
+    return false
+  } catch (e) {
+    return false
+  }
+}
+
 module.exports = {
   getAllManagers,
   getManagerFromPhone,
@@ -249,5 +277,7 @@ module.exports = {
   getManagerFromLast4,
   sendAllUnrespondedMessagesToAccountant,
   getCharge,
-  recordManagerResponse
+  getAllCharges,
+  recordManagerResponse,
+  loginUser
 }
