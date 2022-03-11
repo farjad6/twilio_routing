@@ -78,7 +78,6 @@ class Home extends Component {
     
     if( end_date ){
       var end_dateCheck = new Date(end_date);
-      console.log(end_dateCheck)
       end_dateCheck.setDate(end_dateCheck.getDate() + 1);
       end_dateCheck.setHours(0,0,0,0);
       filteredData = filteredData.filter(x => new Date(x.created_at) < end_dateCheck );
