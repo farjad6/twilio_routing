@@ -1,11 +1,20 @@
 
 require('dotenv').config()
+
 const TwilioClient = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 var parsePhoneNumber = require('libphonenumber-js').parsePhoneNumber
 var express = require('express');
 const path = require('path');
 const helpers = require('./helpers')
+
+const {
+    BlobServiceClient,
+    StorageSharedKeyCredential,
+    newPipeline
+  } = require('@azure/storage-blob');
+
+
 var router = express();
 const withAuth = require('./middleware');
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
@@ -16,7 +25,37 @@ router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 router.use(express.text());
 router.use(cookieParser());
+
 const secret = process.env.JWT_SECRET
+
+
+const containerName1 = 'thumbnails';
+const multer = require('multer');
+const inMemoryStorage = multer.memoryStorage();
+const uploadStrategy = multer({ storage: inMemoryStorage }).array('images', 12);
+const getStream = require('into-stream');
+// const getStream = require('get-stream');
+const containerName2 = 'images';
+const ONE_MEGABYTE = 1024 * 1024;
+const uploadOptions = { bufferSize: 4 * ONE_MEGABYTE, maxBuffers: 20 };
+
+const sharedKeyCredential = new StorageSharedKeyCredential(
+  process.env.AZURE_STORAGE_ACCOUNT_NAME,
+  process.env.AZURE_STORAGE_ACCOUNT_ACCESS_KEY);
+const pipeline = newPipeline(sharedKeyCredential);
+
+const blobServiceClient = new BlobServiceClient(
+  `https://${process.env.AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net`,
+  pipeline
+);
+
+const getBlobName = originalName => {
+  // Use a random number to generate a unique file name, 
+  // removing "0." from the start of the string.
+  const identifier = Math.random().toString().replace(/0\./, '');
+//   return `${identifier}-${originalName}`;
+  return `${identifier}`;
+};
 
 
 router.get('/version', async function (req, res) {
@@ -75,8 +114,27 @@ router.get('/charge/:id', async function (req, res) {
     }));
 });
 
-router.post('/charge', async function (req, res) {
-    await helpers.recordManagerResponse(req.body)
+router.post('/charge', uploadStrategy, async function (req, res) {
+    var attachedFiles = [];
+    if( req.files ){
+        for( var i = 0 ;  i < req.files.length ; i++ ){
+            element = req.files[i];
+            const blobName = getBlobName(element.originalname);
+            const stream = getStream(element.buffer);
+            const containerClient = blobServiceClient.getContainerClient(containerName2);;
+            const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+            try {
+                await blockBlobClient.uploadStream(stream,
+                uploadOptions.bufferSize, uploadOptions.maxBuffers,
+                { blobHTTPHeaders: { blobContentType: element.mimetype } });
+                attachedFiles[i]= blobName; 
+            } catch (err) {
+                console.log("err", err);
+            }
+        }
+    }
+    await helpers.recordManagerResponse(req.body, attachedFiles)
     res.send(JSON.stringify({ 
         status: true, 
         data: [],

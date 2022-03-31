@@ -196,6 +196,7 @@ class Home extends Component {
                     <th>Last4</th>
                     <th>Message</th>
                     <th>Comment</th>
+                    <th>Attachments</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -218,6 +219,13 @@ class Home extends Component {
                         <td>{result.last4.padStart(4, "0")}</td>
                         <td>{result.message}</td>
                         <td>{result.comment}</td>
+                        <td>
+                          {
+                            result.files?.split("&*&")?.map( ele => { return <>
+                              <a target={"_blank"} href={`https://banksms.blob.core.windows.net/images/${ele}`} rel="noreferrer">{ele}</a><br/>
+                            </> })
+                          }
+                        </td>
                       </tr>
                     
                   )

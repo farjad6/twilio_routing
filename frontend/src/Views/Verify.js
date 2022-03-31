@@ -14,6 +14,7 @@ class Verify extends Component {
       message: "Charge Not Found",
       status: 0,
       comment: "",
+      images: []
     },
   }
 
@@ -25,14 +26,32 @@ class Verify extends Component {
 
   submitCharge = async () => {
     this.setState({isLoading: true, ConfirmDialog:false})
-    let data = {
-      id: this.state.charge.id,
-      status: this.state.action ? 2 : 1,
-      comment: this.state.charge.comment ? this.state.charge.comment : "" ,
+    // let data = {
+    //   id: this.state.charge.id,
+    //   status: this.state.action ? 2 : 1,
+    //   comment: this.state.charge.comment ? this.state.charge.comment : "" ,
+    //   images: this.state.images,
+    // }
+
+    var form = new FormData()
+    form.append('id', this.state.charge.id )
+    form.append('status', this.state.action ? 2 : 1 )
+    form.append('comment', this.state.charge.comment ? this.state.charge.comment : ""  )
+    // form.append('images',  this.state.images  )
+    if(this.state.images){
+      Array.from(this.state.images).forEach(image => {
+        form.append("images", image);
+      });
     }
-    await updateCharge(data);
-    const charge = await getCharge(data.id);
+    
+
+    await updateCharge(form);
+    const charge = await getCharge(this.state.charge.id);
     this.setState({isLoading: false, charge: charge})
+  }
+
+  fileSelectedHandler = (e) => {
+    this.setState({ images: e.target.files })
   }
 
   render() {
@@ -87,7 +106,7 @@ class Verify extends Component {
                 confirm = { () => this.submitCharge() }
                 cancel = { () => {this.setState({ConfirmDialog:false})} }
               />
-              <div class="mb-4">
+              {/* <div class="mb-4">
                 <div class="form-check">
                   <input 
                     class="form-check-input appearance-none h-4 w-4 border border-gray-300 rounded-sm bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain float-left mr-2 cursor-pointer" 
@@ -110,6 +129,12 @@ class Verify extends Component {
                     I don't recognize this charge!
                   </label>
                 </div>
+              </div> */}
+              <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+                  Attachments
+                </label>
+                <input type="file" accept="image/*" onChange={this.fileSelectedHandler} name="images[]" multiple class="h-full w-full" />
               </div>
               <div class="mb-6">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
@@ -146,8 +171,12 @@ class Verify extends Component {
                 {/* <p class="text-red-500 text-xs italic">Please choose a password.</p> */}
               </div>
               <div class="flex items-center justify-between">
-                <button onClick={() => this.setState({ConfirmDialog:true})} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
-                  Submit
+                <button onClick={() => this.setState({action: true, ConfirmDialog:true} , () => console.log(this.state) )} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
+                  Mark as Recognized
+                </button>
+
+                <button onClick={() => this.setState({action: false, ConfirmDialog:true} , () => console.log(this.state)  )} class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
+                  Mark as Not Recognized
                 </button>
               </div>
             </form>

@@ -70,15 +70,19 @@ const getManagerFromLast4 = async (last4) => {
   }
 }
 
-const recordManagerResponse = async (data) => {
+const recordManagerResponse = async (data, files) => {
   try {
     let status = 0;
+    let filesC = "";
     if ( data.status == 2 ) {
       status = 2;
     } else if ( data.status == 1 ) {
       status = 1;
     }
-    let query = `update charges set status=${status}, comment='${data.comment.replace(/'/g, "''")}' where id = ${data.id}`;
+    if( files.length ){
+      filesC = files.join("&*&");
+    }
+    let query = `update charges set status=${status}, comment='${data.comment.replace(/'/g, "''")}', files='${filesC}' where id = ${data.id}`;
     await pool.query(query)
     if( status == 1){
       sendToAccoutant(data.id);
@@ -93,7 +97,7 @@ const getAllCharges = async() => {
   try {
     const {
       rows
-    } = await pool.query(`select c.id as id, c.message as message, c.comment as comment, c.status as status, c.created_at as created_at, c.last4 as last4, m.name as name, m.last4 as mlast4, m.email as email  from charges c LEFT JOIN managers m ON cast(c.last4 as int)=cast(m.last4 as int) order by created_at DESC`);
+    } = await pool.query(`select c.id as id, c.message as message, c.comment as comment, c.status as status, c.created_at as created_at, c.last4 as last4, c.files as files, m.name as name, m.last4 as mlast4, m.email as email  from charges c LEFT JOIN managers m ON cast(c.last4 as int)=cast(m.last4 as int) order by created_at DESC`);
     if (rows.length) {
       return rows
     } else {
